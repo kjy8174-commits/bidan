@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 · 비단결고운길 필라테스</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<style>
+* { box-sizing: border-box; margin:0; padding:0; }
+body { display:flex; flex-direction:column; min-height:100vh; }
+header { background:linear-gradient(135deg,#2a1e18,#4a2e22); padding:0 1.8rem; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 3px 20px rgba(44,31,23,.35); }
+.logo { display:flex; flex-direction:column; gap:1px; }
+.logo-ko { font-family:'Noto Serif KR',serif; font-size:.98rem; font-weight:700; color:#f0ddd0; letter-spacing:.05em; }
+.logo-en { font-family:'Cormorant Garamond',serif; font-size:.68rem; font-style:italic; color:var(--gold); letter-spacing:.16em; }
+.header-r { display:flex; align-items:center; gap:.8rem; }
+.date-chip { font-size:.74rem; color:#c8aea0; }
+.admin-pill { background:var(--rose); color:#fff; font-size:.68rem; padding:3px 10px; border-radius:20px; font-weight:600; }
+nav { background:var(--white); border-bottom:1px solid var(--border); display:flex; overflow-x:auto; padding:0 1.4rem; }
+.nb { background:none; border:none; border-bottom:2.5px solid transparent; padding:.8rem 1.1rem; font-family:'Noto Sans KR',sans-serif; font-size:.82rem; font-weight:500; color:var(--muted); cursor:pointer; white-space:nowrap; transition:all .18s; }
+.nb:hover { color:var(--rose); }
+.nb.on { color:var(--rose); border-bottom-color:var(--rose); font-weight:700; }
+main { padding:1.6rem; max-width:1020px; margin:0 auto; flex:1; width:100%; }
+.tp { display:none; }
+.tp.on { display:block; }
+/* STATS */
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:.9rem; margin-bottom:1.8rem; }
+.scard { background:var(--white); border-radius:14px; border:1px solid var(--border); padding:1.1rem 1.3rem; box-shadow:var(--shadow); transition:transform .14s; }
+.scard:hover { transform:translateY(-2px); }
+.sico { font-size:1.3rem; margin-bottom:.3rem; }
+.slabel { font-size:.72rem; color:var(--muted); }
+.sval { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:600; color:var(--dark); line-height:1.1; }
+.ssub { font-size:.7rem; color:var(--green); margin-top:1px; }
+/* TODAY */
+.tlist { display:flex; flex-direction:column; gap:.65rem; }
+.titem { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:.85rem 1.1rem; display:flex; align-items:center; gap:.9rem; transition:all .14s; }
+.titem:hover { border-color:var(--blush); box-shadow:0 4px 18px rgba(196,112,90,.1); }
+.ttime { text-align:center; min-width:52px; }
+.ttv { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--rose); line-height:1; }
+.tts { font-size:.63rem; color:var(--muted); }
+.tdiv { width:1px; height:34px; background:var(--border); }
+.tinfo { flex:1; }
+.tcls { font-weight:700; font-size:.84rem; margin-bottom:2px; }
+.tmeta { font-size:.72rem; color:var(--mid); }
+/* TOOLBAR */
+.toolbar { display:flex; gap:.7rem; margin-bottom:1rem; flex-wrap:wrap; align-items:center; }
+.si { border:1px solid var(--border); border-radius:8px; padding:7px 12px; font-family:'Noto Sans KR',sans-serif; font-size:.8rem; color:var(--dark); background:#fff; outline:none; transition:border-color .14s; }
+.si:focus { border-color:var(--rose); }
+/* NOTICE */
+.nitem { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:1rem 1.2rem; margin-bottom:.65rem; }
+.nh { display:flex; justify-content:space-between; align-items:center; margin-bottom:.3rem; }
+.nt { font-weight:700; font-size:.88rem; }
+.nd { font-size:.7rem; color:var(--muted); }
+.np { font-size:.78rem; color:var(--mid); line-height:1.55; }
+/* PASS */
+.pass-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; }
+.pass-card { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:1.2rem; box-shadow:var(--shadow); }
+.pass-name { font-family:'Noto Serif KR',serif; font-weight:600; margin-bottom:.3rem; }
+.pass-price { font-family:'Cormorant Garamond',serif; font-size:1.5rem; color:var(--rose); font-weight:600; }
+.pass-meta { font-size:.75rem; color:var(--muted); margin-top:.4rem; }
+/* LOGIN */
+.login-wrap { min-height:80vh; display:flex; align-items:center; justify-content:center; }
+.login-box { background:var(--white); border:1px solid var(--border); border-radius:20px; padding:2.5rem; width:100%; max-width:360px; box-shadow:var(--shadow-lg); text-align:center; }
+.login-logo { font-family:'Noto Serif KR',serif; font-size:1.2rem; font-weight:700; margin-bottom:.3rem; }
+.login-sub { font-size:.78rem; color:var(--muted); margin-bottom:2rem; }
+/* INQUIRY HIGHLIGHT */
+.inquiry-row { background:#fffbf0 !important; }
+@media(max-width:700px){
+  .stats { grid-template-columns:repeat(2,1fr); }
+  main { padding:1rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginSection" style="position:fixed;inset:0;background:var(--cream);z-index:999;display:flex;align-items:center;justify-content:center;">
+  <div class="login-box">
+    <div class="login-logo">비단결고운길 필라테스</div>
+    <div class="login-sub">관리자 로그인</div>
+    <div class="form-group"><label class="form-label">이메일</label><input class="form-input" id="loginEmail" type="email" placeholder="admin@example.com"></div>
+    <div class="form-group"><label class="form-label">비밀번호</label><input class="form-input" id="loginPw" type="password" placeholder="••••••••"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:.5rem;padding:11px" onclick="doLogin()">로그인</button>
+    <div id="loginErr" style="color:var(--red);font-size:.78rem;margin-top:.8rem"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">
+    <span class="logo-ko">비단결고운길 필라테스</span>
+    <span class="logo-en">Admin Dashboard</span>
+  </div>
+  <div class="header-r">
+    <span class="date-chip" id="dateChip"></span>
+    <span class="admin-pill">관리자</span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="color:#c8aea0">로그아웃</button>
+  </div>
+</header>
+
+<nav>
+  <button class="nb on" onclick="goTab('dash',this)">🏠 대시보드</button>
+  <button class="nb" onclick="goTab('res',this)">📋 예약 · 문의</button>
+  <button class="nb" onclick="goTab('mem',this)">👥 회원</button>
+  <button class="nb" onclick="goTab('pass',this)">💳 수강권</button>
+  <button class="nb" onclick="goTab('notice',this)">📢 공지</button>
+</nav>
+
+<main>
+
+<!-- 대시보드 -->
+<div class="tp on" id="tp-dash">
+  <div class="stats">
+    <div class="scard"><div class="sico">📌</div><div class="slabel">오늘 예약</div><div class="sval" id="s-res">—</div><div class="ssub">건 확정</div></div>
+    <div class="scard"><div class="sico">👥</div><div class="slabel">총 회원</div><div class="sval" id="s-mem">—</div><div class="ssub">명</div></div>
+    <div class="scard"><div class="sico">🆕</div><div class="slabel">신규 문의</div><div class="sval" id="s-inq">—</div><div class="ssub">건 미확인</div></div>
+    <div class="scard"><div class="sico">⚠️</div><div class="slabel">만료 임박</div><div class="sval" id="s-exp">—</div><div class="ssub">7일 이내</div></div>
+  </div>
+  <div class="sec-title">오늘 예약</div>
+  <div class="tlist" id="todayList"><div class="loading"><div class="spinner"></div> 불러오는 중...</div></div>
+</div>
+
+<!-- 예약·문의 -->
+<div class="tp" id="tp-res">
+  <div class="sec-title">예약 · 문의 현황</div>
+  <div class="toolbar">
+    <input class="si" id="resSearch" placeholder="이름·수업 검색..." oninput="filterRes()" style="width:180px">
+    <select class="si" id="resStatus" onchange="filterRes()">
+      <option value="">전체 상태</option>
+      <option value="inquiry">신규 문의</option>
+      <option value="confirmed">예약 확정</option>
+      <option value="completed">완료</option>
+      <option value="cancelled">취소</option>
+      <option value="noshow">노쇼</option>
+    </select>
+    <input class="si" id="resDate" type="date" onchange="filterRes()">
+    <button class="btn btn-primary" onclick="openModal('addRes')">+ 예약 추가</button>
+  </div>
+  <div class="card table-wrap">
+    <table><thead><tr><th>상태</th><th>날짜</th><th>시간</th><th>수업</th><th>메모</th><th>관리</th></tr></thead>
+    <tbody id="resTbody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- 회원 -->
+<div class="tp" id="tp-mem">
+  <div class="sec-title">회원 관리</div>
+  <div class="toolbar">
+    <input class="si" id="memSearch" placeholder="이름·연락처 검색..." oninput="filterMem()" style="width:180px">
+    <button class="btn btn-primary" onclick="openModal('addMem')">+ 회원 등록</button>
+  </div>
+  <div class="card table-wrap">
+    <table><thead><tr><th>이름</th><th>연락처</th><th>이메일</th><th>생년월일</th><th>메모</th><th>관리</th></tr></thead>
+    <tbody id="memTbody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- 수강권 -->
+<div class="tp" id="tp-pass">
+  <div class="sec-title">수강권 현황</div>
+  <div class="toolbar">
+    <input class="si" id="passSearch" placeholder="회원 이름 검색..." oninput="filterPass()" style="width:180px">
+    <select class="si" id="passStatus" onchange="filterPass()">
+      <option value="">전체</option><option value="active">활성</option>
+      <option value="expired">만료</option><option value="paused">정지</option>
+    </select>
+    <button class="btn btn-primary" onclick="openModal('addPass')">+ 수강권 부여</button>
+  </div>
+  <div class="card table-wrap">
+    <table><thead><tr><th>회원</th><th>수강권</th><th>잔여</th><th>진도</th><th>만료일</th><th>상태</th><th>관리</th></tr></thead>
+    <tbody id="passTbody"><tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- 공지 -->
+<div class="tp" id="tp-notice">
+  <div class="sec-title">공지사항</div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+    <button class="btn btn-primary" onclick="openModal('addNotice')">+ 공지 작성</button>
+  </div>
+  <div id="noticeList"><div class="loading"><div class="spinner"></div></div></div>
+</div>
+
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOuter(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter">
+      <button class="btn btn-outline" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" id="modalSaveBtn" onclick="saveModal()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+let members = [], passes = [], reservations = [], passTypes = [], notices = [];
+let modalMode = '', editId = null;
+
+// ── INIT ──
+document.getElementById('dateChip').textContent = new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    document.getElementById('loginSection').style.display = 'none';
+    loadAll();
+  }
+  db.auth.onAuthStateChange((_e, s) => {
+    document.getElementById('loginSection').style.display = s ? 'none' : 'flex';
+    if (s) loadAll();
+  });
+}
+
+async function loadAll() {
+  await Promise.all([loadMembers(), loadPasses(), loadReservations(), loadPassTypes(), loadNotices()]);
+  updateDashboard();
+}
+
+// ── AUTH ──
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const pw = document.getElementById('loginPw').value;
+  const { error } = await db.auth.signInWithPassword({ email, password: pw });
+  if (error) document.getElementById('loginErr').textContent = '이메일 또는 비밀번호가 올바르지 않습니다.';
+}
+async function doLogout() {
+  await db.auth.signOut();
+  showToast('로그아웃 되었습니다.');
+}
+
+// ── LOAD ──
+async function loadMembers() {
+  const { data } = await db.from('members').select('*').order('created_at', { ascending: false });
+  members = data || [];
+  renderMembers(members);
+}
+async function loadPasses() {
+  const { data } = await db.from('member_passes').select('*, members(name, phone), pass_types(name)').order('created_at', { ascending: false });
+  passes = data || [];
+  renderPasses(passes);
+}
+async function loadReservations() {
+  const { data } = await db.from('reservations').select('*').order('reserved_date', { ascending: false });
+  reservations = data || [];
+  renderReservations(reservations);
+}
+async function loadPassTypes() {
+  const { data } = await db.from('pass_types').select('*');
+  passTypes = data || [];
+}
+async function loadNotices() {
+  const { data } = await db.from('notices').select('*').order('created_at', { ascending: false });
+  notices = data || [];
+  renderNotices(notices);
+}
+
+// ── DASHBOARD ──
+function updateDashboard() {
+  const today = new Date().toISOString().slice(0,10);
+  const todayRes = reservations.filter(r => r.reserved_date === today && r.status === 'confirmed');
+  const inquiries = reservations.filter(r => r.status === 'inquiry');
+  const expireSoon = passes.filter(p => {
+    if (p.status !== 'active') return false;
+    const diff = (new Date(p.expire_date) - new Date()) / 86400000;
+    return diff >= 0 && diff <= 7;
+  });
+  document.getElementById('s-res').textContent = todayRes.length;
+  document.getElementById('s-mem').textContent = members.length;
+  document.getElementById('s-inq').textContent = inquiries.length;
+  document.getElementById('s-exp').textContent = expireSoon.length;
+
+  const tl = document.getElementById('todayList');
+  if (!todayRes.length) {
+    tl.innerHTML = '<div class="empty"><div class="empty-icon">🌿</div><p>오늘 예약된 수업이 없습니다.</p></div>';
+    return;
+  }
+  tl.innerHTML = todayRes.map(r => `
+    <div class="titem">
+      <div class="ttime"><div class="ttv">${r.start_time?.slice(0,5)||'—'}</div><div class="tts">${r.reserved_date}</div></div>
+      <div class="tdiv"></div>
+      <div class="tinfo"><div class="tcls">${r.class_title}</div><div class="tmeta">${r.memo||''}</div></div>
+      <span class="badge badge-green">확정</span>
+    </div>`).join('');
+}
+
+// ── RENDER MEMBERS ──
+function renderMembers(data) {
+  const t = document.getElementById('memTbody');
+  if (!data.length) { t.innerHTML = emptyRow(6, '등록된 회원이 없습니다.'); return; }
+  t.innerHTML = data.map(m => `<tr>
+    <td><strong>${m.name}</strong></td>
+    <td>${m.phone||'—'}</td>
+    <td style="font-size:.76rem;color:var(--muted)">${m.email||'—'}</td>
+    <td style="font-size:.76rem">${m.birth_date||'—'}</td>
+    <td style="font-size:.76rem;color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.memo||'—'}</td>
+    <td style="display:flex;gap:4px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="editMember('${m.id}')">수정</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')">삭제</button>
+    </td>
+  </tr>`).join('');
+}
+function filterMem() {
+  const q = document.getElementById('memSearch').value.toLowerCase();
+  renderMembers(q ? members.filter(m => m.name?.includes(q) || m.phone?.includes(q)) : members);
+}
+
+// ── RENDER RESERVATIONS ──
+function renderReservations(data) {
+  const t = document.getElementById('resTbody');
+  if (!data.length) { t.innerHTML = emptyRow(6, '예약 내역이 없습니다.'); return; }
+  const statusMap = { inquiry:'신규문의', confirmed:'예약확정', completed:'완료', cancelled:'취소', noshow:'노쇼' };
+  const badgeMap  = { inquiry:'badge-yellow', confirmed:'badge-green', completed:'badge-gray', cancelled:'badge-red', noshow:'badge-red' };
+  t.innerHTML = data.map(r => `<tr class="${r.status==='inquiry'?'inquiry-row':''}">
+    <td><span class="badge ${badgeMap[r.status]||'badge-gray'}">${statusMap[r.status]||r.status}</span></td>
+    <td>${r.reserved_date||'—'}</td>
+    <td>${r.start_time?.slice(0,5)||'—'}</td>
+    <td><strong>${r.class_title}</strong></td>
+    <td style="font-size:.76rem;color:var(--muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.memo||'—'}</td>
+    <td style="display:flex;gap:4px;flex-wrap:wrap">
+      ${r.status==='inquiry'?`<button class="btn btn-success btn-sm" onclick="confirmRes('${r.id}')">확정</button>`:''}
+      <button class="btn btn-outline btn-sm" onclick="editRes('${r.id}')">수정</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteRes('${r.id}')">삭제</button>
+    </td>
+  </tr>`).join('');
+}
+function filterRes() {
+  const q = document.getElementById('resSearch').value.toLowerCase();
+  const s = document.getElementById('resStatus').value;
+  const d = document.getElementById('resDate').value;
+  let f = reservations;
+  if (q) f = f.filter(r => r.class_title?.toLowerCase().includes(q) || r.memo?.toLowerCase().includes(q));
+  if (s) f = f.filter(r => r.status === s);
+  if (d) f = f.filter(r => r.reserved_date === d);
+  renderReservations(f);
+}
+async function confirmRes(id) {
+  await db.from('reservations').update({ status: 'confirmed' }).eq('id', id);
+  showToast('예약이 확정되었습니다. ✅');
+  loadReservations().then(updateDashboard);
+}
+async function deleteRes(id) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  await db.from('reservations').delete().eq('id', id);
+  showToast('삭제되었습니다.'); loadReservations().then(updateDashboard);
+}
+
+// ── RENDER PASSES ──
+function renderPasses(data) {
+  const t = document.getElementById('passTbody');
+  if (!data.length) { t.innerHTML = emptyRow(7, '수강권 내역이 없습니다.'); return; }
+  const bmap = { active:'badge-green', expired:'badge-red', paused:'badge-yellow' };
+  const lmap = { active:'활성', expired:'만료', paused:'정지' };
+  t.innerHTML = data.map(p => {
+    const used = p.used_count, total = p.total_count, remain = total - used;
+    const pct = Math.round((used/total)*100);
+    const memberName = p.members?.name || '—';
+    return `<tr>
+      <td><strong>${memberName}</strong><div style="font-size:.7rem;color:var(--muted)">${p.members?.phone||''}</div></td>
+      <td>${p.pass_name}</td>
+      <td style="font-weight:700;color:${remain<=2?'var(--red)':'var(--dark)'}">${remain}회</td>
+      <td style="min-width:100px">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">${used}/${total}</div>
+        <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </td>
+      <td>${p.expire_date}</td>
+      <td><span class="badge ${bmap[p.status]||'badge-gray'}">${lmap[p.status]||p.status}</span></td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="usePass('${p.id}',${used},${total})">사용</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePass('${p.id}')">삭제</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function filterPass() {
+  const q = document.getElementById('passSearch').value.toLowerCase();
+  const s = document.getElementById('passStatus').value;
+  let f = passes;
+  if (q) f = f.filter(p => p.members?.name?.toLowerCase().includes(q));
+  if (s) f = f.filter(p => p.status === s);
+  renderPasses(f);
+}
+async function usePass(id, used, total) {
+  if (used >= total) { showToast('잔여 횟수가 없습니다.'); return; }
+  if (!confirm('수업 1회 차감하시겠습니까?')) return;
+  const newUsed = used + 1;
+  const newStatus = newUsed >= total ? 'expired' : 'active';
+  await db.from('member_passes').update({ used_count: newUsed, status: newStatus }).eq('id', id);
+  showToast('1회 차감되었습니다. ✅'); loadPasses();
+}
+async function deletePass(id) {
+  if (!confirm('수강권을 삭제하시겠습니까?')) return;
+  await db.from('member_passes').delete().eq('id', id);
+  showToast('삭제되었습니다.'); loadPasses();
+}
+
+// ── RENDER NOTICES ──
+function renderNotices(data) {
+  const el = document.getElementById('noticeList');
+  if (!data.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📢</div><p>공지사항이 없습니다.</p></div>'; return; }
+  el.innerHTML = data.map(n => `
+    <div class="nitem">
+      <div class="nh">
+        <div class="nt">${n.is_pinned?'📌 ':''}${n.title}</div>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span class="nd">${n.created_at?.slice(0,10)}</span>
+          <button class="btn btn-danger btn-sm" onclick="deleteNotice('${n.id}')">삭제</button>
+        </div>
+      </div>
+      <div class="np">${n.content}</div>
+    </div>`).join('');
+}
+async function deleteNotice(id) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  await db.from('notices').delete().eq('id', id);
+  showToast('삭제되었습니다.'); loadNotices();
+}
+
+// ── MODAL ──
+function openModal(mode, id) {
+  modalMode = mode; editId = id || null;
+  const forms = {
+    addRes: { title:'예약 추가', body:`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">날짜 *</label><input class="form-input" id="f-date" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+        <div class="form-group"><label class="form-label">시간 *</label><input class="form-input" id="f-time" type="time" value="10:00"></div>
+      </div>
+      <div class="form-group"><label class="form-label">수업명 *</label>
+        <select class="form-input" id="f-class">
+          <option>기초 필라테스</option><option>체형 교정</option>
+          <option>다이어트 필라테스</option><option>재활 필라테스</option><option>상담 문의</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">메모</label><input class="form-input" id="f-memo" placeholder="특이사항"></div>`
+    },
+    addMem: { title:'회원 등록', body:`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">이름 *</label><input class="form-input" id="f-name" placeholder="홍길동"></div>
+        <div class="form-group"><label class="form-label">연락처 *</label><input class="form-input" id="f-phone" placeholder="010-0000-0000"></div>
+      </div>
+      <div class="form-group"><label class="form-label">이메일</label><input class="form-input" id="f-email" type="email" placeholder="(선택)"></div>
+      <div class="form-group"><label class="form-label">생년월일</label><input class="form-input" id="f-birth" type="date"></div>
+      <div class="form-group"><label class="form-label">메모</label><textarea class="form-input form-textarea" id="f-memo" placeholder="부상이력, 목표 등" style="min-height:70px"></textarea></div>`
+    },
+    addPass: { title:'수강권 부여', body:`
+      <div class="form-group"><label class="form-label">회원 *</label>
+        <select class="form-input" id="f-member">${members.map(m=>`<option value="${m.id}">${m.name} (${m.phone})</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label class="form-label">수강권 종류</label>
+        <select class="form-input" id="f-passtype" onchange="updatePassFields(this)">
+          ${passTypes.map(p=>`<option value="${p.id}" data-count="${p.total_count}" data-days="${p.valid_days}" data-name="${p.name}">${p.name} (${p.total_count}회 / ${(p.price/10000).toFixed(0)}만원)</option>`).join('')}
+          <option value="custom">직접 입력</option>
+        </select>
+      </div>
+      <div id="customFields" style="display:none">
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">수강권명</label><input class="form-input" id="f-pname" placeholder="예: 1:1 레슨 10회"></div>
+          <div class="form-group"><label class="form-label">총 횟수</label><input class="form-input" id="f-pcount" type="number" value="10"></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">시작일</label><input class="form-input" id="f-start" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+        <div class="form-group"><label class="form-label">만료일 *</label><input class="form-input" id="f-expire" type="date"></div>
+      </div>`
+    },
+    addNotice: { title:'공지 작성', body:`
+      <div class="form-group"><label class="form-label">제목 *</label><input class="form-input" id="f-ntitle" placeholder="공지 제목"></div>
+      <div class="form-group"><label class="form-label">내용 *</label><textarea class="form-input form-textarea" id="f-ncontent" placeholder="공지 내용"></textarea></div>
+      <div class="form-group" style="display:flex;align-items:center;gap:.5rem">
+        <input type="checkbox" id="f-pin" style="width:16px;height:16px">
+        <label for="f-pin" class="form-label" style="margin:0">상단 고정</label>
+      </div>`
+    }
+  };
+  const f = forms[mode] || { title:'편집', body:'' };
+  document.getElementById('modalTitle').textContent = f.title;
+  document.getElementById('modalBody').innerHTML = f.body;
+  document.getElementById('modalOverlay').classList.add('open');
+  // set default expire for pass
+  if (mode === 'addPass') {
+    const sel = document.getElementById('f-passtype');
+    if (sel) updatePassFields(sel);
+  }
+}
+
+function updatePassFields(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const days = opt.dataset.days;
+  const isCustom = sel.value === 'custom';
+  document.getElementById('customFields').style.display = isCustom ? 'block' : 'none';
+  const expEl = document.getElementById('f-expire');
+  if (days && expEl) {
+    const d = new Date(); d.setDate(d.getDate() + parseInt(days));
+    expEl.value = d.toISOString().slice(0,10);
+  }
+}
+
+function editMember(id) {
+  const m = members.find(x => x.id === id);
+  if (!m) return;
+  openModal('addMem', id);
+  document.getElementById('modalTitle').textContent = '회원 수정';
+  document.getElementById('f-name').value = m.name||'';
+  document.getElementById('f-phone').value = m.phone||'';
+  document.getElementById('f-email').value = m.email||'';
+  document.getElementById('f-birth').value = m.birth_date||'';
+  document.getElementById('f-memo').value = m.memo||'';
+  modalMode = 'editMem'; editId = id;
+}
+function editRes(id) {
+  const r = reservations.find(x => x.id === id);
+  if (!r) return;
+  openModal('addRes', id);
+  document.getElementById('modalTitle').textContent = '예약 수정';
+  document.getElementById('f-date').value = r.reserved_date||'';
+  document.getElementById('f-time').value = r.start_time?.slice(0,5)||'';
+  document.getElementById('f-memo').value = r.memo||'';
+  modalMode = 'editRes'; editId = id;
+}
+
+async function saveModal() {
+  const btn = document.getElementById('modalSaveBtn');
+  btn.textContent = '저장 중...'; btn.disabled = true;
+  try {
+    if (modalMode === 'addRes') {
+      await db.from('reservations').insert({ reserved_date: v('f-date'), start_time: v('f-time'), class_title: v('f-class'), status:'confirmed', memo: v('f-memo') });
+      showToast('예약이 추가되었습니다! ✅'); await loadReservations(); updateDashboard();
+    } else if (modalMode === 'editRes') {
+      await db.from('reservations').update({ reserved_date: v('f-date'), start_time: v('f-time'), memo: v('f-memo') }).eq('id', editId);
+      showToast('수정되었습니다!'); await loadReservations();
+    } else if (modalMode === 'addMem') {
+      if (!v('f-name')) { showToast('이름을 입력해주세요.'); return; }
+      await db.from('members').insert({ name: v('f-name'), phone: v('f-phone'), email: v('f-email')||null, birth_date: v('f-birth')||null, memo: v('f-memo')||null });
+      showToast('회원이 등록되었습니다! 🎉'); await loadMembers(); updateDashboard();
+    } else if (modalMode === 'editMem') {
+      await db.from('members').update({ name: v('f-name'), phone: v('f-phone'), email: v('f-email')||null, birth_date: v('f-birth')||null, memo: v('f-memo')||null }).eq('id', editId);
+      showToast('수정되었습니다!'); await loadMembers();
+    } else if (modalMode === 'addPass') {
+      const sel = document.getElementById('f-passtype');
+      const isCustom = sel.value === 'custom';
+      const opt = sel.options[sel.selectedIndex];
+      const passName = isCustom ? v('f-pname') : opt.dataset.name;
+      const totalCount = isCustom ? parseInt(v('f-pcount')) : parseInt(opt.dataset.count);
+      await db.from('member_passes').insert({ member_id: v('f-member'), pass_type_id: isCustom ? null : sel.value, pass_name: passName, total_count: totalCount, start_date: v('f-start'), expire_date: v('f-expire'), status:'active' });
+      showToast('수강권이 부여되었습니다! 💳'); await loadPasses(); updateDashboard();
+    } else if (modalMode === 'addNotice') {
+      if (!v('f-ntitle')) { showToast('제목을 입력해주세요.'); return; }
+      await db.from('notices').insert({ title: v('f-ntitle'), content: v('f-ncontent'), is_pinned: document.getElementById('f-pin')?.checked || false });
+      showToast('공지가 등록되었습니다! 📢'); await loadNotices();
+    }
+    closeModal();
+  } catch(err) {
+    showToast('오류가 발생했습니다: ' + err.message);
+  }
+  btn.textContent = '저장'; btn.disabled = false;
+}
+
+async function deleteMember(id) {
+  if (!confirm('회원을 삭제하시겠습니까? 관련 예약과 수강권도 함께 삭제됩니다.')) return;
+  await db.from('members').delete().eq('id', id);
+  showToast('삭제되었습니다.'); await loadMembers(); updateDashboard();
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); modalMode = ''; editId = null; }
+function closeModalOuter(e) { if (e.target.id === 'modalOverlay') closeModal(); }
+
+// ── TABS ──
+function goTab(tab, btn) {
+  document.querySelectorAll('.tp').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(el => el.classList.remove('on'));
+  document.getElementById('tp-' + tab).classList.add('on');
+  btn.classList.add('on');
+}
+
+// ── UTILS ──
+const v = id => (document.getElementById(id)?.value || '').trim();
+function emptyRow(cols, msg) { return `<tr><td colspan="${cols}"><div class="empty"><div class="empty-icon">🌿</div><p>${msg}</p></div></td></tr>`; }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+init();
+</script>
+</body>
+</html>
